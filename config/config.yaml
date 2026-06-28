@@ -1,0 +1,125 @@
+# =============================================================================
+# Knowledge-to-Equation  ·  Main configuration
+# -----------------------------------------------------------------------------
+# Everything that is process-specific lives here. The code reads input/output
+# variables, file names and model settings from this file, so you can point the
+# pipeline at a new process WITHOUT editing any Python.
+# API keys are NOT stored here -> see config/.env
+# =============================================================================
+
+# A short, human-readable description of the process / quantity you are modelling.
+# It is injected into the prompts and the knowledge-retrieval query.
+topic: "Material Removal Rate (MRR) in laser-based micro-machining"
+
+# -----------------------------------------------------------------------------
+# Variables
+#   inputs : the process parameters (the X of the model), IN ORDER.
+#   output : the performance metric you want an equation for (the y).
+# For each variable:
+#   name   -> full human name (used in prompts)
+#   symbol -> short symbol used inside the generated Python function
+#   column -> EXACT column header in the dataset spreadsheet
+# The generated functions unpack X in exactly the order listed below:
+#     def model(X, a0, ...):
+#         WS, P, F, SS = X
+# so the order here must match the order you want the symbols unpacked.
+# -----------------------------------------------------------------------------
+variables:
+  inputs:
+    - name: "Water Speed"
+      symbol: "WS"
+      column: "WaterSpeed (m/s)"
+    - name: "Pulse Energy"
+      symbol: "P"
+      column: "PulseEnergy (microJ)"
+    - name: "Frequency"
+      symbol: "F"
+      column: "Frequency (kHz)"
+    - name: "Scanning Speed"
+      symbol: "SS"
+      column: "ScanningSpeed (mm/s)"
+  output:
+    name: "Material Removal Rate"
+    symbol: "MRR"
+    column: "MRR (cubic micrometer per sec)"
+
+# -----------------------------------------------------------------------------
+# Dataset (the experimental data the equations are fitted to).
+# Put your spreadsheet inside the data/ folder.
+# The train/test split reproduces the paper's extrapolation protocol:
+#   * iteratively keep only the bottom `ratio` quantile of each filter column
+#     -> this low-value region becomes the train+validation pool,
+#   * everything outside that region becomes the (extrapolative) test set,
+#   * `train_size` rows are randomly sampled for training, the rest validate.
+# -----------------------------------------------------------------------------
+dataset:
+  file: "data/FLIPMM.xlsx"
+  # Columns used to carve out the low-value training region.
+  # Leave empty ([]) to use all input columns.
+  filter_columns:
+    - "WaterSpeed (m/s)"
+    - "PulseEnergy (microJ)"
+    - "Frequency (kHz)"
+    - "ScanningSpeed (mm/s)"
+  ratio: 0.75          # bottom quantile kept as the train/validation pool
+  train_size: 30       # rows sampled for training
+  random_state: 50     # reproducible sampling
+
+# -----------------------------------------------------------------------------
+# Knowledge extraction (Retrieval-Augmented Generation over the literature).
+# Put the literature PDFs inside data/literature/.
+# Parsed results are cached so you only pay the parsing cost once.
+# -----------------------------------------------------------------------------
+knowledge:
+  # PDFs to parse. Leave empty ([]) to automatically parse EVERY *.pdf inside
+  # data/literature/ (just drop new PDFs in that folder). You may also list
+  # individual PDFs or directories explicitly, e.g.:
+  #   pdf_files:
+  #     - "data/literature/sample1.pdf"
+  #     - "data/literature"        # a directory -> all *.pdf inside it
+  pdf_files: []
+  parsed_cache: "data/cache/parsed_data.pkl"
+  parsing_instruction: >
+    The provided documents describe a manufacturing process. Use them to find
+    information about the requested variables and their relations. We also want
+    to derive equations, so if any equations exist, retrieve them as well.
+  similarity_top_k: 15
+  reranker_model: "BAAI/bge-reranker-large"
+  reranker_top_n: 15
+  # The retrieval query sent to the RAG engine. {topic}, {inputs} and {output}
+  # are filled in automatically from the variables above; edit the prose freely.
+  retrieval_query: >
+    Only use knowledge from the provided PDFs. Retrieve and analyze the direct
+    relationships between {inputs} and {output} as observed in the academic
+    papers. Identify how each input variable influences {output}: whether the
+    relationship is positive (an increase in the input increases {output}),
+    negative (an increase decreases {output}), or follows a logarithmic,
+    polynomial, or exponential trend. Provide concrete data or text from the
+    papers describing the behaviour of {output} in response to changes in the
+    inputs, including whether the changes are linear, nonlinear, logarithmic or
+    follow other patterns. Include relevant tables or paragraphs as evidence and
+    also explain the process and the variables.
+
+# -----------------------------------------------------------------------------
+# Language-model and search settings.
+# -----------------------------------------------------------------------------
+model:
+  llm_model: "gpt-4o-mini"
+  embedding_model: "text-embedding-3-small"
+  phase1_iterations: 50      # candidate equations generated in Phase 1
+  phase3_iterations: 20      # refinement candidates per refinement round
+  refinement_max_rounds: 10  # max Phase 3 refinement rounds
+  r2_threshold: 0.02         # stop refining once (1 - validation_R2) <= this
+  max_tokens_initial: 350
+  max_tokens_refine: 300
+  temperature_min: 0.3       # Phase 1 sampling temperature range
+  temperature_max: 0.8
+
+# -----------------------------------------------------------------------------
+# Outputs. Files are written into `dir`, which is created automatically.
+# -----------------------------------------------------------------------------
+output:
+  dir: "output"
+  initial_equation_file: "initial_equation.txt"
+  final_equation_file: "final_equation.txt"
+  summary_file: "run_summary.txt"

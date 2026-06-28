@@ -1,0 +1,25 @@
+# Secrets
+config/.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# Data, caches and generated outputs (keep the folders, ignore the contents)
+data/*
+!data/.gitkeep
+!data/README.md
+!data/literature/
+data/literature/*
+!data/literature/.gitkeep
+!data/cache/
+data/cache/*
+!data/cache/.gitkeep
+
+output/*
+!output/.gitkeep
