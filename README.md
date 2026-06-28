@@ -190,6 +190,7 @@ flowchart TD
         O3["run_summary.txt"]
     end
 
+    linkStyle default stroke:#37474f,stroke-width:2.5px;
     classDef phase fill:#fff3e0,stroke:#e65100,color:#000;
     classDef rag fill:#ede7f6,stroke:#4527a0,color:#000;
     classDef refine fill:#e0f2f1,stroke:#00695c,color:#000;
