@@ -10,7 +10,9 @@ fits them to a small experimental dataset, and iteratively refines them until
 they generalise to an unseen, high-value (extrapolative) test region.
 
 This repository is based on the paper *"Large Language Models for Extrapolative
-Modeling of Manufacturing Processes"* (Naghavi Khanghah et al.).
+Modeling of Manufacturing Processes"* (Naghavi Khanghah et al.). A preprint is
+available in this repository:
+[`paper/Knowledge-to-analytical-model-manufacturing-process.pdf`](paper/Knowledge-to-analytical-model-manufacturing-process.pdf).
 
 ### Authors & collaborators
 
@@ -330,6 +332,31 @@ kept for reference.
 - **PDF parse cache.** Parsed PDFs are cached at `data/cache/parsed_data.pkl`.
   Delete it after changing the literature PDFs.
 - **Secrets.** `config/.env` is git-ignored — never commit your API keys.
+
+---
+
+## Citation
+
+If you use this work, please cite:
+
+> Naghavi Khanghah, K., Patel, A., Malhotra, R. et al. Large language models for
+> extrapolative modeling of manufacturing processes. *J Intell Manuf* **37**,
+> 2085–2113 (2026). https://doi.org/10.1007/s10845-025-02638-w
+
+```bibtex
+@article{NaghaviKhanghah2026,
+  title   = {Large language models for extrapolative modeling of manufacturing processes},
+  author  = {Naghavi Khanghah, Kiarash and Patel, Anandkumar and Malhotra, Rajiv and Xu, Hongyi},
+  journal = {Journal of Intelligent Manufacturing},
+  volume  = {37},
+  pages   = {2085--2113},
+  year    = {2026},
+  doi     = {10.1007/s10845-025-02638-w}
+}
+```
+
+A preprint PDF is included at
+[`paper/Knowledge-to-analytical-model-manufacturing-process.pdf`](paper/Knowledge-to-analytical-model-manufacturing-process.pdf).
 
 ---
 
