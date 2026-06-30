@@ -1,4 +1,4 @@
-# Knowledge-to-Equation
+# Knowledge-to-analytical-model-manufacturing process
 
 > Developed by the **Computational Engineering and Design (CEaD) Laboratory**,
 > directed by **Dr. Hongyi Xu** — <https://hongyixu.lab.uconn.edu>
