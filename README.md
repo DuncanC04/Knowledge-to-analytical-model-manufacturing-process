@@ -1,3 +1,4 @@
+
 # Knowledge-to-analytical-model-manufacturing process
 
 > Developed by the **Computational Engineering and Design (CEaD) Laboratory**,
@@ -8,7 +9,7 @@ mines parametric relationships from the scientific literature (Retrieval-
 Augmented Generation), proposes candidate equations with a large language model,
 fits them to a small experimental dataset, and iteratively refines them until
 they generalise to an unseen, high-value (extrapolative) test region.
-
+<img width="1698" height="470" alt="image" src="https://github.com/user-attachments/assets/c7c3955e-f50d-4701-a27a-9446b953a092" />
 This repository is based on the journal paper *"Large Language Models for
 Extrapolative Modeling of Manufacturing Processes"* (Naghavi Khanghah et al.),
 published in the *Journal of Intelligent Manufacturing* (2026),
