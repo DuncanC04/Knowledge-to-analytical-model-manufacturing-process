@@ -9,7 +9,9 @@ mines parametric relationships from the scientific literature (Retrieval-
 Augmented Generation), proposes candidate equations with a large language model,
 fits them to a small experimental dataset, and iteratively refines them until
 they generalise to an unseen, high-value (extrapolative) test region.
-<img width="1698" height="470" alt="image" src="https://github.com/user-attachments/assets/c7c3955e-f50d-4701-a27a-9446b953a092" />
+
+<img width="1415" height="404" alt="Figure_repo" src="https://github.com/user-attachments/assets/851f46f7-8916-4f2a-a1ab-d6c7cf6b9c7e" />
+
 This repository is based on the journal paper *"Large Language Models for
 Extrapolative Modeling of Manufacturing Processes"* (Naghavi Khanghah et al.),
 published in the *Journal of Intelligent Manufacturing* (2026),
