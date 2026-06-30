@@ -9,10 +9,13 @@ Augmented Generation), proposes candidate equations with a large language model,
 fits them to a small experimental dataset, and iteratively refines them until
 they generalise to an unseen, high-value (extrapolative) test region.
 
-This repository is based on the paper *"Large Language Models for Extrapolative
-Modeling of Manufacturing Processes"* (Naghavi Khanghah et al.). A preprint is
-available in this repository:
+This repository is based on the journal paper *"Large Language Models for
+Extrapolative Modeling of Manufacturing Processes"* (Naghavi Khanghah et al.),
+published in the *Journal of Intelligent Manufacturing* (2026),
+[doi:10.1007/s10845-025-02638-w](https://doi.org/10.1007/s10845-025-02638-w). A
+preprint is also available in this repository:
 [`paper/Knowledge-to-analytical-model-manufacturing-process.pdf`](paper/Knowledge-to-analytical-model-manufacturing-process.pdf).
+See [Citation](#citation) for the full reference.
 
 ### Authors & collaborators
 

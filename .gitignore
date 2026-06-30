@@ -8,7 +8,9 @@ __pycache__/
 .venv/
 venv/
 env/
-.ipynb_checkpoints/
+.ipynb_checkpoints/'
+
+.claude/
 
 # Data, caches and generated outputs (keep the folders, ignore the contents)
 data/*
