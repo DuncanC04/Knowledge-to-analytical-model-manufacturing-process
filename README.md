@@ -12,7 +12,7 @@ they generalise to an unseen, high-value (extrapolative) test region.
 
 <img width="1415" height="404" alt="Figure_repo" src="https://github.com/user-attachments/assets/1cde4b81-d6c7-4ab4-a8a8-38c836aaca0c" />
 
-This repository is based on the journal paper *"Large Language Models for
+This repository is based on our journal paper *"Large Language Models for
 Extrapolative Modeling of Manufacturing Processes"* (Naghavi Khanghah et al.),
 published in the *Journal of Intelligent Manufacturing* (2026),
 [doi:10.1007/s10845-025-02638-w](https://doi.org/10.1007/s10845-025-02638-w). A
