@@ -26,7 +26,7 @@ def main():
     )
     args = parser.parse_args()
 
-    # Allow nested event loops (LlamaParse / LlamaIndex use asyncio internally).
+    # Allow nested event loops used by the local Docling/LlamaIndex retrieval stack.
     nest_asyncio.apply()
 
     result = run(config_path=args.config)

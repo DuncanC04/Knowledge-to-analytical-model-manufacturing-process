@@ -1,0 +1,36 @@
+[project]
+name = "knowledge-to-analytical-model-manufacturing-process"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Duncan Craine", email = "dbcraine04@gmail.com" }
+]
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "docling>=2.130.0",
+    "flagembedding>=1.3.5",
+    "llama-index-core>=0.12.48",
+    "llama-index-embeddings-huggingface>=0.5.5",
+    "llama-index-postprocessor-flag-embedding-reranker>=0.3.0",
+    "matplotlib>=3.11.2",
+    "nest-asyncio>=1.6.0",
+    "numpy>=2.2.0",
+    "openai>=2.15.0",
+    "openpyxl>=3.1.5",
+    "pandas>=2.3.0",
+    "pypdf>=6.1.0",
+    "python-dotenv>=1.1.0",
+    "pyyaml>=6.0.2",
+    "scikit-learn>=1.7.0",
+    "scipy>=1.16.0",
+    "torch>=2.7.0",
+    "tqdm>=4.67.1",
+]
+
+[project.scripts]
+knowledge-to-analytical-model-manufacturing-process = "knowledge_to_analytical_model_manufacturing_process:main"
+
+[build-system]
+requires = ["uv_build>=0.12.9,<0.13.0"]
+build-backend = "uv_build"
