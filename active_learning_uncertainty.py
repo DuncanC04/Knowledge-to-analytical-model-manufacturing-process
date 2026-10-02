@@ -41,6 +41,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import RBFInterpolator
 from scipy.spatial.distance import cdist
+from scipy.stats import norm
 from sklearn.decomposition import PCA
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.gaussian_process import GaussianProcessRegressor
@@ -216,6 +217,19 @@ def random_candidates(bounds: np.ndarray, n: int, rng: np.random.Generator) -> n
     return rng.uniform(low=low, high=high, size=(n, len(low)))
 
 
+def observe_truth(
+    truth: RBFTruth,
+    X_raw: np.ndarray,
+    rng: np.random.Generator,
+    noise_std: float = 0.0,
+) -> np.ndarray:
+    """Query the RBF fake lab, optionally adding Gaussian measurement noise."""
+    y_clean = truth(X_raw)
+    if noise_std <= 0:
+        return y_clean
+    return y_clean + rng.normal(loc=0.0, scale=noise_std, size=len(y_clean))
+
+
 def fit_residual_gp(
     X_obs_scaled: np.ndarray,
     residuals: np.ndarray,
@@ -254,16 +268,30 @@ def acquisition_scores(
     equation_std: np.ndarray,
     nearest_distance: np.ndarray,
     rng: np.random.Generator,
+    equation_range: np.ndarray | None = None,
+    predicted_mean: np.ndarray | None = None,
+    best_observed_y: float | None = None,
 ) -> np.ndarray:
     """Return candidate scores for one active-learning strategy."""
     if strategy == "random":
         return rng.random(len(residual_std))
-    if strategy == "gp_uncertainty":
+    if strategy in {"gp_uncertainty", "rbf_uncertainty"}:
         return residual_std
-    if strategy == "equation_disagreement":
+    if strategy in {"equation_disagreement", "greatest_disagreement_std"}:
         return equation_std
-    if strategy == "distance":
+    if strategy == "greatest_disagreement_range":
+        if equation_range is None:
+            raise ValueError("greatest_disagreement_range requires equation_range.")
+        return equation_range
+    if strategy in {"distance", "space_filling"}:
         return nearest_distance
+    if strategy == "bayesian_optimization":
+        if predicted_mean is None or best_observed_y is None:
+            raise ValueError("bayesian_optimization requires predicted_mean and best_observed_y.")
+        improvement = predicted_mean - best_observed_y
+        sigma = np.maximum(residual_std, 1e-12)
+        z = improvement / sigma
+        return improvement * norm.cdf(z) + sigma * norm.pdf(z)
     if strategy == "equation_plus_gp":
         return zscore(equation_std) + zscore(residual_std)
     if strategy == "combined":
@@ -463,6 +491,7 @@ def run_experiment(
     random_state: int,
     slice_column: str | None,
     strategy: str = "combined",
+    noise_std: float = 0.0,
 ) -> None:
     """Run the RBF-truth active-learning experiment."""
     cfg = load_config()
@@ -487,7 +516,7 @@ def run_experiment(
 
     rng = np.random.default_rng(random_state)
     X_obs = random_candidates(truth.input_bounds, seed_size, rng)
-    y_obs = truth(X_obs)
+    y_obs = observe_truth(truth, X_obs, rng, noise_std)
     X_validation = random_candidates(truth.input_bounds, n_validation, rng)
     y_validation = truth(X_validation)
 
@@ -523,10 +552,12 @@ def run_experiment(
         eq_candidates = predict_equation_ensemble(equation_models, X_candidates)
         eq_mean = eq_candidates.mean(axis=1)
         eq_std = eq_candidates.std(axis=1)
+        eq_range = eq_candidates.max(axis=1) - eq_candidates.min(axis=1)
         residual_mean, residual_std = residual_gp.predict(
             X_candidates_scaled,
             return_std=True,
         )
+        combined_mean = eq_mean + residual_mean
         nearest_distance = cdist(X_candidates_scaled, X_obs_scaled).min(axis=1)
 
         # This acquisition is not "the" correct one. It is a transparent first
@@ -537,10 +568,13 @@ def run_experiment(
             equation_std=eq_std,
             nearest_distance=nearest_distance,
             rng=rng,
+            equation_range=eq_range,
+            predicted_mean=combined_mean,
+            best_observed_y=float(np.max(y_obs)),
         )
         next_pos = int(np.argmax(acquisition))
         next_x = X_candidates[next_pos]
-        next_y = truth(next_x.reshape(1, -1))[0]
+        next_y = observe_truth(truth, next_x.reshape(1, -1), rng, noise_std)[0]
 
         trace_rows.append(
             {
@@ -591,7 +625,8 @@ def run_experiment(
         final_candidates["equation_std"] = eq_std
         final_candidates["residual_mean"] = residual_mean
         final_candidates["residual_std"] = residual_std
-        final_candidates["combined_mean"] = eq_mean + residual_mean
+        final_candidates["combined_mean"] = combined_mean
+        final_candidates["equation_range"] = eq_range
         final_candidates["nearest_distance"] = nearest_distance
         final_candidates["acquisition"] = acquisition
         final_validation = pd.DataFrame(
@@ -628,6 +663,7 @@ def run_experiment(
     print(f"RBF truth fitted from {len(df)} FLIPMM rows.")
     print(f"Used {len(equations)} equation form(s) from {equation_source}.")
     print(f"Acquisition strategy: {strategy}")
+    print(f"Observation noise std: {noise_std}")
     print(trace[["step", "n_observed", "rmse_on_rbf_truth", "r2_on_rbf_truth"]])
     print(f"\nWrote: {trace_path}")
     print(f"Wrote: {candidates_path}")
@@ -656,6 +692,7 @@ def simulate_trace(
     n_candidates: int,
     n_validation: int,
     random_state: int,
+    noise_std: float = 0.0,
 ) -> pd.DataFrame:
     """Run one benchmark trace without writing per-step plots/files."""
     input_cols = cfg["input_columns"]
@@ -663,7 +700,7 @@ def simulate_trace(
     rng = np.random.default_rng(random_state)
 
     X_obs = random_candidates(truth.input_bounds, seed_size, rng)
-    y_obs = truth(X_obs)
+    y_obs = observe_truth(truth, X_obs, rng, noise_std)
     X_validation = random_candidates(truth.input_bounds, n_validation, rng)
     y_validation = truth(X_validation)
 
@@ -692,6 +729,7 @@ def simulate_trace(
                 "n_observed": len(X_obs),
                 "rmse_on_rbf_truth": rmse,
                 "r2_on_rbf_truth": r2,
+                "noise_std": noise_std,
             }
         )
 
@@ -702,7 +740,9 @@ def simulate_trace(
         X_candidates_scaled = obs_scaler.transform(X_candidates)
         eq_candidates = predict_equation_ensemble(equation_models, X_candidates)
         eq_std = eq_candidates.std(axis=1)
-        _, residual_std = residual_gp.predict(X_candidates_scaled, return_std=True)
+        eq_range = eq_candidates.max(axis=1) - eq_candidates.min(axis=1)
+        residual_mean, residual_std = residual_gp.predict(X_candidates_scaled, return_std=True)
+        predicted_mean = eq_candidates.mean(axis=1) + residual_mean
         nearest_distance = cdist(X_candidates_scaled, X_obs_scaled).min(axis=1)
         acquisition = acquisition_scores(
             strategy,
@@ -710,9 +750,12 @@ def simulate_trace(
             equation_std=eq_std,
             nearest_distance=nearest_distance,
             rng=rng,
+            equation_range=eq_range,
+            predicted_mean=predicted_mean,
+            best_observed_y=float(np.max(y_obs)),
         )
         next_x = X_candidates[int(np.argmax(acquisition))]
-        next_y = truth(next_x.reshape(1, -1))[0]
+        next_y = observe_truth(truth, next_x.reshape(1, -1), rng, noise_std)[0]
         X_obs = np.vstack([X_obs, next_x])
         y_obs = np.append(y_obs, next_y)
 
@@ -768,11 +811,11 @@ def run_benchmark(args: argparse.Namespace) -> None:
 
     strategies = [
         "random",
-        "gp_uncertainty",
-        "equation_disagreement",
-        "distance",
-        "equation_plus_gp",
-        "combined",
+        "space_filling",
+        "rbf_uncertainty",
+        "bayesian_optimization",
+        "greatest_disagreement_range",
+        "greatest_disagreement_std",
     ]
     traces = []
     for seed_offset in range(args.benchmark_seeds):
@@ -790,6 +833,7 @@ def run_benchmark(args: argparse.Namespace) -> None:
                     n_candidates=args.n_candidates,
                     n_validation=args.n_validation,
                     random_state=seed,
+                    noise_std=args.noise_std,
                 )
             )
 
@@ -826,6 +870,7 @@ def run_benchmark(args: argparse.Namespace) -> None:
 
     print(f"Benchmark equation source: {equation_source}")
     print(f"Seeds per strategy: {args.benchmark_seeds}")
+    print(f"Observation noise std: {args.noise_std}")
     print(final)
     print(f"\nWrote: {trace_path}")
     print(f"Wrote: {summary_path}")
@@ -861,13 +906,27 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--n-validation", type=int, default=2000)
     parser.add_argument("--random-state", type=int, default=50)
     parser.add_argument(
+        "--noise-std",
+        type=float,
+        default=0.0,
+        help=(
+            "Gaussian measurement noise added to RBF observations queried by "
+            "the learner. Validation is still scored against the clean RBF truth."
+        ),
+    )
+    parser.add_argument(
         "--strategy",
         default="combined",
         choices=[
             "random",
             "gp_uncertainty",
+            "rbf_uncertainty",
             "equation_disagreement",
+            "greatest_disagreement_std",
+            "greatest_disagreement_range",
             "distance",
+            "space_filling",
+            "bayesian_optimization",
             "equation_plus_gp",
             "combined",
         ],
@@ -896,4 +955,5 @@ if __name__ == "__main__":
             random_state=args.random_state,
             slice_column=args.slice_column,
             strategy=args.strategy,
+            noise_std=args.noise_std,
         )
