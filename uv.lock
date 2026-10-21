@@ -1029,6 +1029,7 @@ source = { editable = "." }
 dependencies = [
     { name = "docling" },
     { name = "flagembedding" },
+    { name = "laya" },
     { name = "llama-index-core" },
     { name = "llama-index-embeddings-huggingface" },
     { name = "llama-index-postprocessor-flag-embedding-reranker" },
@@ -1051,6 +1052,7 @@ dependencies = [
 requires-dist = [
     { name = "docling", specifier = ">=2.130.0" },
     { name = "flagembedding", specifier = ">=1.3.5" },
+    { name = "laya", specifier = ">=0.4.13" },
     { name = "llama-index-core", specifier = ">=0.12.48" },
     { name = "llama-index-embeddings-huggingface", specifier = ">=0.5.5" },
     { name = "llama-index-postprocessor-flag-embedding-reranker", specifier = ">=0.3.0" },
@@ -1085,6 +1087,22 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/88/db/336c38300e44582752b95842b15a4be8fe656914cf5b02ad1bec53cebceb/latex2mathml-3.81.1.tar.gz", hash = "sha256:c95add0c0fcdecad2d70567e0643050d5ea1149fb2e98a5d5792fb1c8eea2ed5", size = 77475, upload-time = "2026-09-07T19:55:11.037Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/07/30/b8bcfb01a2514cb7554a048ed52883de276e66d757c3cc535a3c29eb9e98/latex2mathml-3.81.1-py3-none-any.whl", hash = "sha256:c337668441b71c819b6733905a8058ba9a9d767bae11a0c5fdacb3aff31361bd", size = 79159, upload-time = "2026-09-07T19:55:09.611Z" },
+]
+
+[[package]]
+name = "laya"
+version = "0.4.13"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "huggingface-hub" },
+    { name = "numpy" },
+    { name = "safetensors" },
+    { name = "torch" },
+    { name = "transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/35/53/b3758436ed9db7eeec138dc66999afa0b2c2f135046da1dbd373b6164958/laya-0.4.13.tar.gz", hash = "sha256:d3c138a257f96aff3d3812ff7b50d5afbb987c278bde7067f82afc81cbceb7e3", size = 1323084, upload-time = "2026-10-21T13:42:50.164Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1b/a6/87551a0d2a7eb8161d25a3bbf33c7de60d6926201000648606b8d9128c17/laya-0.4.13-py3-none-any.whl", hash = "sha256:0ce3a444821b62ae9a452f922156e08d99b6c6d625e3fa590e84177eb3e980a8", size = 439568, upload-time = "2026-10-21T13:42:48.284Z" },
 ]
 
 [[package]]

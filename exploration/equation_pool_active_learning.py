@@ -33,7 +33,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.exceptions import ConvergenceWarning
 
-from active_learning_uncertainty import (
+from exploration.active_learning_uncertainty import (
     OUT_DIR,
     RBFTruth,
     acquisition_scores,
@@ -53,7 +53,7 @@ DEFAULT_BENCHMARK = "output/active_learning_uncertainty/benchmark_summary.csv"
 
 def equation_features(func, n_params: int, X_raw: np.ndarray) -> np.ndarray:
     """Build the same linear-in-parameters design matrix used elsewhere."""
-    from active_learning_uncertainty import equation_design_matrix
+    from exploration.active_learning_uncertainty import equation_design_matrix
 
     return equation_design_matrix(func, n_params, X_raw)
 

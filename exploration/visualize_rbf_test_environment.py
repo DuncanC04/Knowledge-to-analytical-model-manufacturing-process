@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error, r2_score
 
-from active_learning_uncertainty import fit_rbf_truth
+from exploration.active_learning_uncertainty import fit_rbf_truth
 from src.config_loader import load_config, resolve_path
 
 
