@@ -1,0 +1,97 @@
+evaluation,output,axis,model,rmse_mean,r2_mean,mae_mean
+5-fold unique-setting holdout,Width (micrometer),WaterSpeed (m/s),linear,1.3847208248667644,0.82442083706608,1.0763791847505697
+5-fold unique-setting holdout,Width (micrometer),WaterSpeed (m/s),quadratic,1.2555575646558692e-13,1.0,1.078863494268052e-13
+5-fold unique-setting holdout,Width (micrometer),WaterSpeed (m/s),rbf,0.030841293194477433,0.9999087308952944,0.01973484118911754
+leave_WaterSpeed (m/s)_highest_level_out,Width (micrometer),WaterSpeed (m/s),linear,1.5360024869991364,0.7245858852680758,1.2143522962963034
+leave_WaterSpeed (m/s)_highest_level_out,Width (micrometer),WaterSpeed (m/s),quadratic,7.92556172724813e-14,1.0,6.619704784327496e-14
+leave_WaterSpeed (m/s)_highest_level_out,Width (micrometer),WaterSpeed (m/s),rbf,0.18456560683275353,0.9960234732724726,0.14337315659906608
+5-fold unique-setting holdout,Width (micrometer),PulseEnergy (microJ),linear,1.3847208248667644,0.82442083706608,1.0763791847505697
+5-fold unique-setting holdout,Width (micrometer),PulseEnergy (microJ),quadratic,1.2555575646558692e-13,1.0,1.078863494268052e-13
+5-fold unique-setting holdout,Width (micrometer),PulseEnergy (microJ),rbf,0.030841293194477433,0.9999087308952944,0.01973484118911754
+leave_PulseEnergy (microJ)_highest_level_out,Width (micrometer),PulseEnergy (microJ),linear,2.4049937625890436,0.5585003318669174,1.956161037037038
+leave_PulseEnergy (microJ)_highest_level_out,Width (micrometer),PulseEnergy (microJ),quadratic,1.456842758313975e-13,1.0,1.4033219031261979e-13
+leave_PulseEnergy (microJ)_highest_level_out,Width (micrometer),PulseEnergy (microJ),rbf,0.46243081954020837,0.9836771490782866,0.3782827297341099
+5-fold unique-setting holdout,Width (micrometer),Frequency (kHz),linear,1.3847208248667644,0.82442083706608,1.0763791847505697
+5-fold unique-setting holdout,Width (micrometer),Frequency (kHz),quadratic,1.2555575646558692e-13,1.0,1.078863494268052e-13
+5-fold unique-setting holdout,Width (micrometer),Frequency (kHz),rbf,0.030841293194477433,0.9999087308952944,0.01973484118911754
+leave_Frequency (kHz)_highest_level_out,Width (micrometer),Frequency (kHz),linear,2.195375853287502,0.7203869355170267,1.8275946666666645
+leave_Frequency (kHz)_highest_level_out,Width (micrometer),Frequency (kHz),quadratic,8.72929047390963e-14,1.0,6.963873921961294e-14
+leave_Frequency (kHz)_highest_level_out,Width (micrometer),Frequency (kHz),rbf,0.31473538482465024,0.9942531370887352,0.2445215108190782
+5-fold unique-setting holdout,Width (micrometer),ScanningSpeed (mm/s),linear,1.3847208248667644,0.82442083706608,1.0763791847505697
+5-fold unique-setting holdout,Width (micrometer),ScanningSpeed (mm/s),quadratic,1.2555575646558692e-13,1.0,1.078863494268052e-13
+5-fold unique-setting holdout,Width (micrometer),ScanningSpeed (mm/s),rbf,0.030841293194477433,0.9999087308952944,0.01973484118911754
+leave_ScanningSpeed (mm/s)_highest_level_out,Width (micrometer),ScanningSpeed (mm/s),linear,2.1118902494886616,0.5139346161876868,1.8524475925925827
+leave_ScanningSpeed (mm/s)_highest_level_out,Width (micrometer),ScanningSpeed (mm/s),quadratic,1.798448903432618e-13,1.0,1.5082379789532752e-13
+leave_ScanningSpeed (mm/s)_highest_level_out,Width (micrometer),ScanningSpeed (mm/s),rbf,0.4222133844206247,0.9805725412280683,0.39114590774655267
+5-fold unique-setting holdout,Depth (micrometer),WaterSpeed (m/s),linear,5.4292974740323166,0.7293581934281728,4.692619129854913
+5-fold unique-setting holdout,Depth (micrometer),WaterSpeed (m/s),quadratic,5.114767783434342e-13,1.0,4.712681937333964e-13
+5-fold unique-setting holdout,Depth (micrometer),WaterSpeed (m/s),rbf,0.11576071570261151,0.9998769305690416,0.07613452396424973
+leave_WaterSpeed (m/s)_highest_level_out,Depth (micrometer),WaterSpeed (m/s),linear,5.938866650659975,0.7249605093802606,5.270705555555571
+leave_WaterSpeed (m/s)_highest_level_out,Depth (micrometer),WaterSpeed (m/s),quadratic,2.50341269344214e-13,1.0,2.0816768447895484e-13
+leave_WaterSpeed (m/s)_highest_level_out,Depth (micrometer),WaterSpeed (m/s),rbf,1.1563013349636866,0.9895737061352998,0.951080342062245
+5-fold unique-setting holdout,Depth (micrometer),PulseEnergy (microJ),linear,5.4292974740323166,0.7293581934281728,4.692619129854913
+5-fold unique-setting holdout,Depth (micrometer),PulseEnergy (microJ),quadratic,5.114767783434342e-13,1.0,4.712681937333964e-13
+5-fold unique-setting holdout,Depth (micrometer),PulseEnergy (microJ),rbf,0.11576071570261151,0.9998769305690416,0.07613452396424973
+leave_PulseEnergy (microJ)_highest_level_out,Depth (micrometer),PulseEnergy (microJ),linear,6.40250249224335,0.6392652193672084,5.601161203703696
+leave_PulseEnergy (microJ)_highest_level_out,Depth (micrometer),PulseEnergy (microJ),quadratic,9.725417392230574e-13,1.0,9.680485579810494e-13
+leave_PulseEnergy (microJ)_highest_level_out,Depth (micrometer),PulseEnergy (microJ),rbf,1.3962675563909979,0.9828436144001564,1.1838084229326507
+5-fold unique-setting holdout,Depth (micrometer),Frequency (kHz),linear,5.4292974740323166,0.7293581934281728,4.692619129854913
+5-fold unique-setting holdout,Depth (micrometer),Frequency (kHz),quadratic,5.114767783434342e-13,1.0,4.712681937333964e-13
+5-fold unique-setting holdout,Depth (micrometer),Frequency (kHz),rbf,0.11576071570261151,0.9998769305690416,0.07613452396424973
+leave_Frequency (kHz)_highest_level_out,Depth (micrometer),Frequency (kHz),linear,8.410208402203473,0.5306171980219492,7.811217777777778
+leave_Frequency (kHz)_highest_level_out,Depth (micrometer),Frequency (kHz),quadratic,6.994183932224097e-13,1.0,6.930428453344462e-13
+leave_Frequency (kHz)_highest_level_out,Depth (micrometer),Frequency (kHz),rbf,1.9600808172438944,0.9745046126422647,1.7330567069469394
+5-fold unique-setting holdout,Depth (micrometer),ScanningSpeed (mm/s),linear,5.4292974740323166,0.7293581934281728,4.692619129854913
+5-fold unique-setting holdout,Depth (micrometer),ScanningSpeed (mm/s),quadratic,5.114767783434342e-13,1.0,4.712681937333964e-13
+5-fold unique-setting holdout,Depth (micrometer),ScanningSpeed (mm/s),rbf,0.11576071570261151,0.9998769305690416,0.07613452396424973
+leave_ScanningSpeed (mm/s)_highest_level_out,Depth (micrometer),ScanningSpeed (mm/s),linear,14.423586765824421,-29.186879597776986,13.407407407407426
+leave_ScanningSpeed (mm/s)_highest_level_out,Depth (micrometer),ScanningSpeed (mm/s),quadratic,9.011629157321179e-13,1.0,7.261101442335161e-13
+leave_ScanningSpeed (mm/s)_highest_level_out,Depth (micrometer),ScanningSpeed (mm/s),rbf,3.8565698206038572,-1.1581124814813761,3.796284912906049
+5-fold unique-setting holdout,MRR (cubic micrometer per sec),WaterSpeed (m/s),linear,7.105708851021674,0.8689684102484752,5.746968956677644
+5-fold unique-setting holdout,MRR (cubic micrometer per sec),WaterSpeed (m/s),quadratic,7.485690122246724e-13,1.0,6.564651097730535e-13
+5-fold unique-setting holdout,MRR (cubic micrometer per sec),WaterSpeed (m/s),rbf,0.15585406141314484,0.9999312200079803,0.09152362216716797
+leave_WaterSpeed (m/s)_highest_level_out,MRR (cubic micrometer per sec),WaterSpeed (m/s),linear,8.636891690726646,0.8153733800184231,6.703164453703732
+leave_WaterSpeed (m/s)_highest_level_out,MRR (cubic micrometer per sec),WaterSpeed (m/s),quadratic,2.338952677899594e-13,1.0,1.9179970112137568e-13
+leave_WaterSpeed (m/s)_highest_level_out,MRR (cubic micrometer per sec),WaterSpeed (m/s),rbf,1.9567789053476663,0.9905231744125539,1.82495490350254
+5-fold unique-setting holdout,MRR (cubic micrometer per sec),PulseEnergy (microJ),linear,7.105708851021674,0.8689684102484752,5.746968956677644
+5-fold unique-setting holdout,MRR (cubic micrometer per sec),PulseEnergy (microJ),quadratic,7.485690122246724e-13,1.0,6.564651097730535e-13
+5-fold unique-setting holdout,MRR (cubic micrometer per sec),PulseEnergy (microJ),rbf,0.15585406141314484,0.9999312200079803,0.09152362216716797
+leave_PulseEnergy (microJ)_highest_level_out,MRR (cubic micrometer per sec),PulseEnergy (microJ),linear,12.812021419958677,0.5530650922377033,10.520638055555487
+leave_PulseEnergy (microJ)_highest_level_out,MRR (cubic micrometer per sec),PulseEnergy (microJ),quadratic,3.7432692343296456e-13,1.0,3.547474813903051e-13
+leave_PulseEnergy (microJ)_highest_level_out,MRR (cubic micrometer per sec),PulseEnergy (microJ),rbf,1.0010335818865717,0.9972716111973708,0.7494006206848987
+5-fold unique-setting holdout,MRR (cubic micrometer per sec),Frequency (kHz),linear,7.105708851021674,0.8689684102484752,5.746968956677644
+5-fold unique-setting holdout,MRR (cubic micrometer per sec),Frequency (kHz),quadratic,7.485690122246724e-13,1.0,6.564651097730535e-13
+5-fold unique-setting holdout,MRR (cubic micrometer per sec),Frequency (kHz),rbf,0.15585406141314484,0.9999312200079803,0.09152362216716797
+leave_Frequency (kHz)_highest_level_out,MRR (cubic micrometer per sec),Frequency (kHz),linear,16.715755540344595,-0.3923929276332132,15.47567407407403
+leave_Frequency (kHz)_highest_level_out,MRR (cubic micrometer per sec),Frequency (kHz),quadratic,6.323055717552183e-13,1.0,5.311584505562905e-13
+leave_Frequency (kHz)_highest_level_out,MRR (cubic micrometer per sec),Frequency (kHz),rbf,1.9891813454900638,0.9802821961542613,1.8058242622285667
+5-fold unique-setting holdout,MRR (cubic micrometer per sec),ScanningSpeed (mm/s),linear,7.105708851021674,0.8689684102484752,5.746968956677644
+5-fold unique-setting holdout,MRR (cubic micrometer per sec),ScanningSpeed (mm/s),quadratic,7.485690122246724e-13,1.0,6.564651097730535e-13
+5-fold unique-setting holdout,MRR (cubic micrometer per sec),ScanningSpeed (mm/s),rbf,0.15585406141314484,0.9999312200079803,0.09152362216716797
+leave_ScanningSpeed (mm/s)_highest_level_out,MRR (cubic micrometer per sec),ScanningSpeed (mm/s),linear,10.83166835772306,0.7337977156892908,8.694737370370325
+leave_ScanningSpeed (mm/s)_highest_level_out,MRR (cubic micrometer per sec),ScanningSpeed (mm/s),quadratic,1.5638146172416822e-12,1.0,1.2709729102500233e-12
+leave_ScanningSpeed (mm/s)_highest_level_out,MRR (cubic micrometer per sec),ScanningSpeed (mm/s),rbf,0.8085379805166464,0.9985167241700825,0.6812473294602188
+5-fold unique-setting holdout,HAZ (micrometer),WaterSpeed (m/s),linear,4.413757415178566,0.769496784679437,3.4916889990114
+5-fold unique-setting holdout,HAZ (micrometer),WaterSpeed (m/s),quadratic,6.069344027916817e-13,1.0,5.828272337683488e-13
+5-fold unique-setting holdout,HAZ (micrometer),WaterSpeed (m/s),rbf,0.09275645074136045,0.99989723379623,0.0574672275192805
+leave_WaterSpeed (m/s)_highest_level_out,HAZ (micrometer),WaterSpeed (m/s),linear,5.328965574375243,0.6695081019577862,3.867901555555613
+leave_WaterSpeed (m/s)_highest_level_out,HAZ (micrometer),WaterSpeed (m/s),quadratic,1.7321927195251716e-13,1.0,1.244004899092488e-13
+leave_WaterSpeed (m/s)_highest_level_out,HAZ (micrometer),WaterSpeed (m/s),rbf,0.42033722653871913,0.9979437747084722,0.3139238226240389
+5-fold unique-setting holdout,HAZ (micrometer),PulseEnergy (microJ),linear,4.413757415178566,0.769496784679437,3.4916889990114
+5-fold unique-setting holdout,HAZ (micrometer),PulseEnergy (microJ),quadratic,6.069344027916817e-13,1.0,5.828272337683488e-13
+5-fold unique-setting holdout,HAZ (micrometer),PulseEnergy (microJ),rbf,0.09275645074136045,0.99989723379623,0.0574672275192805
+leave_PulseEnergy (microJ)_highest_level_out,HAZ (micrometer),PulseEnergy (microJ),linear,7.280715246156898,0.610826473816691,6.056344416666671
+leave_PulseEnergy (microJ)_highest_level_out,HAZ (micrometer),PulseEnergy (microJ),quadratic,8.024170992831892e-13,1.0,7.828737658144291e-13
+leave_PulseEnergy (microJ)_highest_level_out,HAZ (micrometer),PulseEnergy (microJ),rbf,1.0560499492059632,0.9918122585956766,0.9377227173621326
+5-fold unique-setting holdout,HAZ (micrometer),Frequency (kHz),linear,4.413757415178566,0.769496784679437,3.4916889990114
+5-fold unique-setting holdout,HAZ (micrometer),Frequency (kHz),quadratic,6.069344027916817e-13,1.0,5.828272337683488e-13
+5-fold unique-setting holdout,HAZ (micrometer),Frequency (kHz),rbf,0.09275645074136045,0.99989723379623,0.0574672275192805
+leave_Frequency (kHz)_highest_level_out,HAZ (micrometer),Frequency (kHz),linear,8.549259506573334,0.34608058920107887,6.8353033425925815
+leave_Frequency (kHz)_highest_level_out,HAZ (micrometer),Frequency (kHz),quadratic,5.881957812470714e-13,1.0,5.543343561953407e-13
+leave_Frequency (kHz)_highest_level_out,HAZ (micrometer),Frequency (kHz),rbf,1.1020864210876145,0.9891332786204721,0.8850340194436668
+5-fold unique-setting holdout,HAZ (micrometer),ScanningSpeed (mm/s),linear,4.413757415178566,0.769496784679437,3.4916889990114
+5-fold unique-setting holdout,HAZ (micrometer),ScanningSpeed (mm/s),quadratic,6.069344027916817e-13,1.0,5.828272337683488e-13
+5-fold unique-setting holdout,HAZ (micrometer),ScanningSpeed (mm/s),rbf,0.09275645074136045,0.99989723379623,0.0574672275192805
+leave_ScanningSpeed (mm/s)_highest_level_out,HAZ (micrometer),ScanningSpeed (mm/s),linear,5.089537805032903,0.7131602949529181,3.635088472222209
+leave_ScanningSpeed (mm/s)_highest_level_out,HAZ (micrometer),ScanningSpeed (mm/s),quadratic,9.451674919362222e-13,1.0,8.072431612049513e-13
+leave_ScanningSpeed (mm/s)_highest_level_out,HAZ (micrometer),ScanningSpeed (mm/s),rbf,0.41697343452092883,0.9980746958291653,0.34195818986238485

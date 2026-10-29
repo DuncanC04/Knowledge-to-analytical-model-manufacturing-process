@@ -339,6 +339,36 @@ kept for reference.
   Delete it after changing the literature PDFs.
 - **Secrets.** `config/.env` is git-ignored — never commit your API keys.
 
+## Reliability-study implementation
+
+The research-plan scaffold is available through `research_cli.py` and the
+library functions in `src/research.py`. It keeps private inputs local and
+writes ignored manifests under `output/`.
+
+```bash
+python research_cli.py audit
+python research_cli.py manifest
+python research_cli.py data-dictionary
+python research_cli.py tasks
+python research_cli.py thresholds
+python -m unittest discover -s tests -v
+```
+
+The implementation includes SHA-256 provenance manifests, grouped
+single-axis boundary splits, development-only grouped-CV RBF selection,
+convex-hull candidate generation, exact-quote validation, frozen-score
+failure ranking, interval metrics, safe expression validation, committee
+disagreement/decomposition, Pareto committee membership, constraint
+violation scoring, and label-blind pool-based replay. Expert evidence
+classification, engineering tolerances, physical feasibility screens, and
+independent physical validation remain explicit inputs rather than inferred
+software defaults.
+
+Because no engineering tolerance is present in the supplied configuration,
+`thresholds` derives a development-only grid from the active output's standard
+deviation. These values are statistical thresholds and must not be reported as
+engineering tolerances.
+
 ---
 
 ## Citation

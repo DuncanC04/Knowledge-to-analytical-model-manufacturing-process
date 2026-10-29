@@ -42,6 +42,20 @@ variables:
     name: "Material Removal Rate"
     symbol: "MRR"
     column: "MRR (cubic micrometer per sec)"
+  # All measured responses. `output` remains the active modeling target.
+  outputs:
+    - name: "Channel Width"
+      symbol: "W"
+      column: "Width (micrometer)"
+    - name: "Channel Depth"
+      symbol: "D"
+      column: "Depth (micrometer)"
+    - name: "Material Removal Rate"
+      symbol: "MRR"
+      column: "MRR (cubic micrometer per sec)"
+    - name: "Heat-Affected Zone"
+      symbol: "HAZ"
+      column: "HAZ (micrometer)"
 
 # -----------------------------------------------------------------------------
 # Dataset (the experimental data the equations are fitted to).
@@ -64,6 +78,15 @@ dataset:
   ratio: 0.75          # bottom quantile kept as the train/validation pool
   train_size: 30       # rows sampled for training
   random_state: 50     # reproducible sampling
+
+# Evaluation protocol. Null tolerances mean no engineering tolerance has been
+# supplied; the implementation then supports a development-only statistical
+# threshold grid and labels it as such.
+evaluation:
+  tolerances: null
+  statistical_threshold_fractions: [0.1, 0.25, 0.5, 1.0]
+  primary_acceptance_fraction: 0.5
+  interval_nominal_levels: [0.8, 0.9, 0.95]
 
 # -----------------------------------------------------------------------------
 # Knowledge extraction (Retrieval-Augmented Generation over the literature).
