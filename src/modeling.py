@@ -14,10 +14,12 @@ import inspect
 import math
 import random
 import re
+import ast
+import hashlib
 
 import numpy as np
 from scipy.optimize import curve_fit
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from .config_loader import variable_phrase
 
@@ -59,6 +61,141 @@ def _fit_and_evaluate(func, data: dict):
     return popt, mean_squared_error(y_val, pred_val), r2_score(y_val, pred_val)
 
 
+def information_criteria(residuals, n_parameters: int) -> dict:
+    """Compute Gaussian AIC, BIC and small-sample AICc from fit residuals.
+
+    The residual variance is counted as one fitted parameter. These criteria
+    rank candidates; they are not probabilities that a physical equation is
+    true. Validation error remains an independent out-of-sample diagnostic.
+    """
+    residuals = np.asarray(residuals, dtype=float)
+    n = int(residuals.size)
+    k = int(n_parameters) + 1
+    if n <= k:
+        raise ValueError("Need more observations than fitted parameters")
+    rss = max(float(np.sum(residuals ** 2)), np.finfo(float).tiny)
+    base = n * math.log(rss / n)
+    aic = base + 2 * k
+    bic = base + k * math.log(n)
+    aicc = aic + (2 * k * (k + 1) / (n - k - 1)) if n > k + 1 else math.inf
+    return {"aic": float(aic), "bic": float(bic), "aicc": float(aicc), "information_parameter_count": k}
+
+
+def expression_complexity(code: str) -> int:
+    """Count AST nodes as a transparent structural complexity tie-breaker."""
+    tree = ast.parse(_clean_code(code), mode="exec")
+    return sum(1 for node in ast.walk(tree) if isinstance(node, (ast.BinOp, ast.Call, ast.Name, ast.Constant)))
+
+
+def fit_candidate_record(model_code: str, data: dict, literature_context: str = "", candidate_id: str = "candidate") -> dict:
+    """Fit one generated equation and attach train, validation, and IC metadata."""
+    cleaned = _clean_code(model_code)
+    func = _extract_function(cleaned)
+    n_params = _count_inputs(func) - 1
+    x_train, y_train = data["train"]
+    x_val, y_val = data["validation"]
+    popt, _ = curve_fit(func, x_train, y_train, p0=[1] * n_params, maxfev=100_000)
+    train_prediction = np.asarray(func(x_train, *popt), dtype=float)
+    val_prediction = np.asarray(func(x_val, *popt), dtype=float)
+    x_test = data["test"][0]
+    with np.errstate(all="ignore"):
+        domain_prediction = np.asarray(func(x_test, *popt), dtype=float)
+    if not np.all(np.isfinite(train_prediction)) or not np.all(np.isfinite(val_prediction)):
+        raise ValueError("candidate produced non-finite predictions")
+    criteria = information_criteria(np.asarray(y_train) - train_prediction, n_params)
+    return {
+        "candidate_id": candidate_id,
+        "model_code": cleaned,
+        "literature_context": literature_context,
+        "literature_context_sha256": hashlib.sha256(literature_context.encode()).hexdigest(),
+        "parameters": [float(value) for value in popt],
+        "parameter_count": n_params,
+        "expression_complexity": expression_complexity(cleaned),
+        "train_mse": float(mean_squared_error(y_train, train_prediction)),
+        "validation_mse": float(mean_squared_error(y_val, val_prediction)),
+        "validation_r2": float(r2_score(y_val, val_prediction)),
+        "validation_prediction_signature": hashlib.sha256(np.round(val_prediction, 8).tobytes()).hexdigest(),
+        "test_domain_valid": bool(np.all(np.isfinite(domain_prediction)) and np.all(np.abs(domain_prediction) < 1e12)),
+        "test_domain_max_abs_prediction": float(np.nanmax(np.abs(domain_prediction))) if np.any(np.isfinite(domain_prediction)) else math.inf,
+        **criteria,
+    }
+
+
+def select_committee(results: list[dict], committee_size: int = 9, criterion: str = "bic") -> list[dict]:
+    """Select non-redundant candidates by IC, validation error, and complexity."""
+    if criterion not in {"aic", "bic", "aicc"}:
+        raise ValueError("criterion must be one of: aic, bic, aicc")
+    valid = [item for item in results if item.get("test_domain_valid", True)]
+    ordered = sorted(valid, key=lambda item: (item[criterion], item["validation_mse"], item["expression_complexity"]))
+    selected, signatures = [], set()
+    for result in ordered:
+        signature = result["validation_prediction_signature"]
+        if signature in signatures:
+            continue
+        selected.append(result)
+        signatures.add(signature)
+        if len(selected) >= committee_size:
+            break
+    return selected
+
+
+def evaluate_committee_on_test(results: list[dict], data: dict) -> dict:
+    """Evaluate selected structures using their already-fitted parameters.
+
+    Re-fitting a nonlinear generated equation can land in a different local
+    solution and create avoidable overflow. The parameters used here are the
+    ones selected using the development split.
+    """
+    x_test, y_test = data["test"]
+    predictions, members = [], []
+    for result in results:
+        func = _extract_function(result["model_code"])
+        with np.errstate(all="ignore"):
+            prediction = np.asarray(func(x_test, *result["parameters"]), dtype=float)
+        if not np.all(np.isfinite(prediction)) or not np.all(np.abs(prediction) < 1e12):
+            continue
+        predictions.append(prediction)
+        members.append({"candidate_id": result["candidate_id"], "prediction": prediction.tolist()})
+    if not predictions:
+        raise ValueError("No selected candidates produced finite test predictions")
+    prediction_matrix = np.asarray(predictions)
+    mean_prediction = prediction_matrix.mean(axis=0)
+    return {
+        "members": members,
+        "predictions": prediction_matrix.tolist(),
+        "mean_prediction": mean_prediction.tolist(),
+        "mae": float(mean_absolute_error(y_test, mean_prediction)),
+        "rmse": float(mean_squared_error(y_test, mean_prediction) ** 0.5),
+        "r2": float(r2_score(y_test, mean_prediction)),
+        "committee_size": int(len(predictions)),
+        "y_test": np.asarray(y_test).tolist(),
+    }
+
+
+def generate_and_select_committee(client, cfg, retrieve, data, *, use_literature: bool, generation_count: int = 20, committee_size: int = 9, criterion: str = "bic", seed: int = 50, log=print):
+    """Generate comparable literature/no-literature candidate committees."""
+    random.seed(seed)
+    results, failures = [], []
+    no_literature_context = "No literature context was supplied for this arm. Use only the requested equation form and observed data."
+    for index in range(generation_count):
+        context = retrieve() if use_literature else no_literature_context
+        try:
+            code = _generate_initial(client, cfg, context)
+            result = fit_candidate_record(code, data, context, f"{'lit' if use_literature else 'no-lit'}-{index:03d}")
+            results.append(result)
+            log(f"{'literature' if use_literature else 'no-literature'} candidate {index + 1}/{generation_count}: BIC={result['bic']:.3f}")
+        except Exception as exc:  # retain generation failures in the archive
+            if type(exc).__name__ in {"AuthenticationError", "PermissionDeniedError"} or "401" in str(exc):
+                raise RuntimeError(
+                    "LLM authentication failed while generating the equation committee. "
+                    "Update OPENAI_API_KEY in config/.env, then rerun the comparison."
+                ) from exc
+            failures.append({"candidate_id": index, "error": type(exc).__name__, "message": str(exc)})
+    selected = select_committee(results, committee_size, criterion)
+    log(f"{'literature' if use_literature else 'no-literature'}: {len(results)} fitted, {len(selected)} finite non-redundant candidates selected")
+    return selected, {"all_candidates": results, "failures": failures, "criterion": criterion, "use_literature": use_literature}
+
+
 # --------------------------------------------------------------------------- #
 # Prompt construction (driven by the config)
 # --------------------------------------------------------------------------- #
@@ -81,7 +218,10 @@ def _initial_prompt(cfg: dict, context: str) -> str:
         f"    return {out_sym}\n\n"
         "Provide no other context or explanation, just the Python function code. "
         "No extra text. Only utilize the retrieved information to generate the "
-        "equation."
+        "equation. The equation must remain finite across every input in the "
+        "observed dataset bounds. Avoid numerically explosive exponential or "
+        "logarithmic forms unless the supplied literature directly supports "
+        "them; prefer simple bounded-growth forms over unstable high-fit forms."
     )
 
 

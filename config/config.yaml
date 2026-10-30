@@ -138,6 +138,13 @@ model:
   temperature_min: 0.3       # Phase 1 sampling temperature range
   temperature_max: 0.8
 
+# Equal-budget comparison for literature-conditioned committees.
+reliability_comparison:
+  generation_count: 20
+  committee_size: 9
+  selection_criterion: "bic"  # alternatives: aic, aicc
+  seed: 50
+
 # -----------------------------------------------------------------------------
 # Outputs. Files are written into `dir`, which is created automatically.
 # -----------------------------------------------------------------------------

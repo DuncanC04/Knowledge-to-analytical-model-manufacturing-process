@@ -306,6 +306,7 @@ def model(X, a0, a1, ...):
 ```bash
 python main.py                      # uses config/config.yaml
 python main.py --config my.yaml     # uses a custom config
+python main.py --compare-literature  # equal-budget literature/no-literature committee comparison
 ```
 
 ### Outputs (in `output/`)

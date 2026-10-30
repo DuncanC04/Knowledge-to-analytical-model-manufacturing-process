@@ -14,7 +14,7 @@ import argparse
 
 import nest_asyncio
 
-from src.pipeline import run
+from src.pipeline import run, run_literature_comparison
 
 
 def main():
@@ -24,11 +24,20 @@ def main():
         default=None,
         help="Path to the config YAML (defaults to config/config.yaml).",
     )
+    parser.add_argument(
+        "--compare-literature",
+        action="store_true",
+        help="Compare equal-budget equation committees with and without literature context.",
+    )
     args = parser.parse_args()
 
     # Allow nested event loops used by the local Docling/LlamaIndex retrieval stack.
     nest_asyncio.apply()
 
+    if args.compare_literature:
+        result = run_literature_comparison(config_path=args.config)
+        print(f"Comparison written to: {result['output_path']}")
+        return
     result = run(config_path=args.config)
 
     print("\n========================= DONE =========================")

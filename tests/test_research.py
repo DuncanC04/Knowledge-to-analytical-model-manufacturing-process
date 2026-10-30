@@ -11,6 +11,7 @@ from src.research import (
     validate_expression,
     variance_decomposition,
 )
+from src.modeling import information_criteria, select_committee
 
 
 class ResearchTests(unittest.TestCase):
@@ -51,3 +52,25 @@ class ResearchTests(unittest.TestCase):
     def test_threshold_grid_is_labeled_statistical(self):
         result = development_threshold_grid([0.0, 1.0, 2.0], [0.5])
         self.assertEqual(result.loc[0, "interpretation"], "statistical_threshold_not_engineering_tolerance")
+
+    def test_bic_penalizes_complexity_more_than_aic_for_large_n(self):
+        criteria = information_criteria(np.ones(100), n_parameters=4)
+        self.assertGreater(criteria["bic"], criteria["aic"])
+        self.assertGreater(criteria["aicc"], criteria["aic"])
+
+    def test_cv_and_ibmd_match_positive_prediction_definitions(self):
+        metrics = committee_disagreement(np.array([[1.0, 2.0], [3.0, 4.0]]), tau=1.0)
+        self.assertAlmostEqual(metrics.loc[0, "paper_cv"], 0.5)
+        self.assertAlmostEqual(metrics.loc[1, "paper_cv"], 1.0 / 3.0)
+        self.assertAlmostEqual(metrics.loc[0, "paper_ibmd"], np.log1p(2.0 / 3.0))
+        self.assertTrue(np.isfinite(metrics.loc[1, "paper_ibmd"]))
+
+    def test_committee_selection_removes_duplicate_validation_predictions(self):
+        base = {"validation_mse": 1.0, "expression_complexity": 2}
+        candidates = [
+            {**base, "candidate_id": "a", "bic": 1.0, "aic": 1.0, "aicc": 1.0, "validation_prediction_signature": "same"},
+            {**base, "candidate_id": "b", "bic": 2.0, "aic": 2.0, "aicc": 2.0, "validation_prediction_signature": "same"},
+            {**base, "candidate_id": "c", "bic": 3.0, "aic": 3.0, "aicc": 3.0, "validation_prediction_signature": "different"},
+        ]
+        selected = select_committee(candidates, committee_size=2)
+        self.assertEqual([item["candidate_id"] for item in selected], ["a", "c"])
