@@ -2,7 +2,7 @@
 
 Phase 1  -> generate candidate equations from the retrieved knowledge and fit
             them to the training data.
-Phase 3  -> iteratively refine the best equations until the validation R2 is
+Phase 3  -> iteratively refine the best equations until the validation adjusted R2 is
             good enough (or the round budget is exhausted).
 
 The maths is identical to the original notebook; only the variable names,
@@ -58,7 +58,16 @@ def _fit_and_evaluate(func, data: dict):
     popt, _ = curve_fit(func, X_train, y_train, p0=[1] * n_params)
 
     pred_val = func(X_val, *popt)
-    return popt, mean_squared_error(y_val, pred_val), r2_score(y_val, pred_val)
+    r2 = float(r2_score(y_val, pred_val))
+    return popt, mean_squared_error(y_val, pred_val), r2, adjusted_r2(r2, len(y_val), n_params)
+
+
+def adjusted_r2(r2: float, n_observations: int, n_parameters: int) -> float:
+    """Return adjusted R² for a fitted model with ``n_parameters`` terms."""
+    denominator = n_observations - n_parameters - 1
+    if denominator <= 0:
+        return float("-inf")
+    return float(1.0 - (1.0 - float(r2)) * (n_observations - 1) / denominator)
 
 
 def information_criteria(residuals, n_parameters: int) -> dict:
@@ -103,6 +112,8 @@ def fit_candidate_record(model_code: str, data: dict, literature_context: str = 
     if not np.all(np.isfinite(train_prediction)) or not np.all(np.isfinite(val_prediction)):
         raise ValueError("candidate produced non-finite predictions")
     criteria = information_criteria(np.asarray(y_train) - train_prediction, n_params)
+    validation_r2 = float(r2_score(y_val, val_prediction))
+    validation_adjusted_r2 = adjusted_r2(validation_r2, len(y_val), n_params)
     return {
         "candidate_id": candidate_id,
         "model_code": cleaned,
@@ -113,7 +124,8 @@ def fit_candidate_record(model_code: str, data: dict, literature_context: str = 
         "expression_complexity": expression_complexity(cleaned),
         "train_mse": float(mean_squared_error(y_train, train_prediction)),
         "validation_mse": float(mean_squared_error(y_val, val_prediction)),
-        "validation_r2": float(r2_score(y_val, val_prediction)),
+        "validation_r2": validation_r2,
+        "validation_adjusted_r2": validation_adjusted_r2,
         "validation_prediction_signature": hashlib.sha256(np.round(val_prediction, 8).tobytes()).hexdigest(),
         "test_domain_valid": bool(np.all(np.isfinite(domain_prediction)) and np.all(np.abs(domain_prediction) < 1e12)),
         "test_domain_max_abs_prediction": float(np.nanmax(np.abs(domain_prediction))) if np.any(np.isfinite(domain_prediction)) else math.inf,
@@ -123,10 +135,13 @@ def fit_candidate_record(model_code: str, data: dict, literature_context: str = 
 
 def select_committee(results: list[dict], committee_size: int = 9, criterion: str = "bic") -> list[dict]:
     """Select non-redundant candidates by IC, validation error, and complexity."""
-    if criterion not in {"aic", "bic", "aicc"}:
-        raise ValueError("criterion must be one of: aic, bic, aicc")
+    if criterion not in {"aic", "bic", "aicc", "adjusted_r2"}:
+        raise ValueError("criterion must be one of: aic, bic, aicc, adjusted_r2")
     valid = [item for item in results if item.get("test_domain_valid", True)]
-    ordered = sorted(valid, key=lambda item: (item[criterion], item["validation_mse"], item["expression_complexity"]))
+    if criterion == "adjusted_r2":
+        ordered = sorted(valid, key=lambda item: (-item["validation_adjusted_r2"], item["validation_mse"], item["expression_complexity"]))
+    else:
+        ordered = sorted(valid, key=lambda item: (item[criterion], -item.get("validation_adjusted_r2", float("-inf")), item["validation_mse"], item["expression_complexity"]))
     selected, signatures = [], set()
     for result in ordered:
         signature = result["validation_prediction_signature"]
@@ -177,21 +192,28 @@ def generate_and_select_committee(client, cfg, retrieve, data, *, use_literature
     random.seed(seed)
     results, failures = [], []
     no_literature_context = "No literature context was supplied for this arm. Use only the requested equation form and observed data."
-    for index in range(generation_count):
+    target_unique = min(committee_size, generation_count)
+    max_attempts = max(generation_count, generation_count * 5)
+    index = 0
+    while index < max_attempts and (index < generation_count or len(select_committee(results, target_unique, criterion)) < target_unique):
         context = retrieve() if use_literature else no_literature_context
         try:
             code = _generate_initial(client, cfg, context)
             result = fit_candidate_record(code, data, context, f"{'lit' if use_literature else 'no-lit'}-{index:03d}")
             results.append(result)
-            log(f"{'literature' if use_literature else 'no-literature'} candidate {index + 1}/{generation_count}: BIC={result['bic']:.3f}")
+            log(f"{'literature' if use_literature else 'no-literature'} candidate {index + 1}/{generation_count}: adjusted R2={result['validation_adjusted_r2']:.3f}")
         except Exception as exc:  # retain generation failures in the archive
             if type(exc).__name__ in {"AuthenticationError", "PermissionDeniedError"} or "401" in str(exc):
                 raise RuntimeError(
                     "LLM authentication failed while generating the equation committee. "
-                    "Update OPENAI_API_KEY in config/.env, then rerun the comparison."
+                    "Check OPENAI_API_KEY and, for regional keys, set OPENAI_BASE_URL "
+                    "(for example https://us.api.openai.com/v1) in config/.env, then rerun."
                 ) from exc
             failures.append({"candidate_id": index, "error": type(exc).__name__, "message": str(exc)})
+        index += 1
     selected = select_committee(results, committee_size, criterion)
+    if len(selected) < target_unique:
+        log(f"Warning: generated {len(results)} candidates but found only {len(selected)} distinct finite candidates; requested {target_unique}.")
     log(f"{'literature' if use_literature else 'no-literature'}: {len(results)} fitted, {len(selected)} finite non-redundant candidates selected")
     return selected, {"all_candidates": results, "failures": failures, "criterion": criterion, "use_literature": use_literature}
 
@@ -234,13 +256,14 @@ def _refine_prompt(cfg: dict, context: str, summary: str) -> str:
     return (
         f"Use the following retrieved information:\n{context}\n\n"
         f"The results for the top models were as follows:\n{summary}\n\n"
-        "The R2 scores indicate how well each model fits the data. An R2 score "
-        "closer to 1 means a better fit, while a lower R2 score indicates a "
-        "weaker fit. Therefore, the models with higher R2 scores and lower MSE "
+        "The adjusted R2 scores indicate how well each model fits the data while "
+        "penalizing unnecessary fitted coefficients. An adjusted R2 score closer "
+        "to 1 means a better fit, while a lower score indicates a weaker fit. "
+        "Therefore, models with higher adjusted R2 scores and lower MSE "
         "are more reliable and should be given more consideration when creating "
         "new models.\n\n"
         "Based on this information, please generate an improved, complete "
-        f"function which leads to a better R2 score for modelling {out_name} "
+        f"function which leads to a better adjusted R2 score for modelling {out_name} "
         f"({out_sym}) as a function of {variable_phrase(inputs)}. "
         "The model should be generated in this format:\n\n"
         "def improved_model(X, a0, ...):\n"
@@ -253,7 +276,7 @@ def _refine_prompt(cfg: dict, context: str, summary: str) -> str:
         f"terms, or introducing new terms) between {syms} and {out_sym}. "
         f"The function must always conclude with return {out_sym}. Please return "
         "the new Python function in the same format as shown above.\n\n"
-        "Focus on improving the R2 score accuracy of these models. Do not add "
+        "Focus on improving adjusted R2 accuracy while keeping the equation structurally distinct. Do not add "
         "comments. Only return complete Python code, with all equations fully "
         f"defined, and ensure the function ends with \"return {out_sym}\"."
     )
@@ -303,7 +326,7 @@ def _summarize(results: list, top_n: int = 20) -> str:
     for r in results[:top_n]:
         summary += f"Model Code:\n{r['model_code']}\n"
         summary += f"Validation MSE:\n{r['validation_mse']}\n"
-        summary += f"Validation R2: {r['validation_r2']}\n\n"
+        summary += f"Validation adjusted R2: {r.get('validation_adjusted_r2', r['validation_r2'])}\n\n"
     return summary
 
 
@@ -322,8 +345,8 @@ def phase1(client, cfg, retrieve, data, log=print):
             model_code = _clean_code(_generate_initial(client, cfg, context))
             log(f"[Phase 1] Iteration {iteration + 1}: generated model code:\n{model_code}")
             func = _extract_function(model_code)
-            _, mse_val, r2_val = _fit_and_evaluate(func, data)
-            log(f"[Phase 1] validation R2 = {r2_val:.4f}")
+            _, mse_val, r2_val, adjusted_val = _fit_and_evaluate(func, data)
+            log(f"[Phase 1] validation adjusted R2 = {adjusted_val:.4f}")
 
             iteration += 1
             results.append(
@@ -331,6 +354,7 @@ def phase1(client, cfg, retrieve, data, log=print):
                     "model_code": model_code,
                     "validation_mse": mse_val,
                     "validation_r2": r2_val,
+                    "validation_adjusted_r2": adjusted_val,
                 }
             )
         except Exception as e:  # noqa: BLE001 - faithful to original behaviour
@@ -355,8 +379,8 @@ def _refine_once(client, cfg, retrieve, data, summary, results, log=print):
             updated_code = _clean_code(_generate_refined(client, cfg, context, summary))
             log(f"[Phase 3] Iteration {iteration + 1}: generated model code:\n{updated_code}")
             func = _extract_function(updated_code)
-            _, mse_val, r2_val = _fit_and_evaluate(func, data)
-            log(f"[Phase 3] validation R2 = {r2_val:.4f} | MSE = {mse_val}")
+            _, mse_val, r2_val, adjusted_val = _fit_and_evaluate(func, data)
+            log(f"[Phase 3] validation adjusted R2 = {adjusted_val:.4f} | MSE = {mse_val}")
 
             iteration += 1
             results.append(
@@ -364,6 +388,7 @@ def _refine_once(client, cfg, retrieve, data, summary, results, log=print):
                     "model_code": updated_code,
                     "validation_mse": mse_val,
                     "validation_r2": r2_val,
+                    "validation_adjusted_r2": adjusted_val,
                 }
             )
         except Exception as e:  # noqa: BLE001
@@ -376,15 +401,15 @@ def _refine_once(client, cfg, retrieve, data, summary, results, log=print):
 
 
 def phase3(client, cfg, retrieve, data, summary, results, log=print):
-    """Iteratively refine until validation R2 is good enough. Returns (summary, results)."""
+    """Iteratively refine until validation adjusted R2 is good enough."""
     threshold = cfg["model"]["r2_threshold"]
     max_rounds = cfg["model"]["refinement_max_rounds"]
 
     summary_p3, results_p3 = summary, results
     rounds = 0
-    while (1 - results_p3[0]["validation_r2"] > threshold) and rounds < max_rounds:
+    while (1 - results_p3[0].get("validation_adjusted_r2", results_p3[0]["validation_r2"]) > threshold) and rounds < max_rounds:
         log(f"[Phase 3] Refinement round {rounds + 1} "
-            f"(best validation R2 = {results_p3[0]['validation_r2']:.4f})")
+            f"(best validation adjusted R2 = {results_p3[0].get('validation_adjusted_r2', results_p3[0]['validation_r2']):.4f})")
         summary_p3, results_p3 = _refine_once(
             client, cfg, retrieve, data, summary_p3, results_p3, log=log
         )

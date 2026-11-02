@@ -107,7 +107,10 @@ def load_config(config_path: str | os.PathLike | None = None) -> dict:
     inputs, outputs = _validate_variables(cfg)
 
     # Load API keys from config/.env (falls back to any keys already in the env).
-    load_dotenv(ROOT / "config" / ".env")
+    # The project keeps its active credentials in config/.env. Override stale
+    # process-level values so replacing a key in that file actually affects
+    # CLI runs launched through uv or an IDE terminal.
+    load_dotenv(ROOT / "config" / ".env", override=True)
 
     cfg["_root"] = ROOT
     output = cfg["variables"]["output"]

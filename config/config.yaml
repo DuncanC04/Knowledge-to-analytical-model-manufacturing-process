@@ -9,7 +9,7 @@
 
 # A short, human-readable description of the process / quantity you are modelling.
 # It is injected into the prompts and the knowledge-retrieval query.
-topic: "Material Removal Rate (MRR) in laser-based micro-machining"
+topic: "FLIPMM (Flow-assisted Laser-Induced Plasma Micro-Machining)"
 
 # -----------------------------------------------------------------------------
 # Variables
@@ -29,7 +29,7 @@ variables:
     - name: "Water Speed"
       symbol: "WS"
       column: "WaterSpeed (m/s)"
-    - name: "Pulse Energy"
+    - name: "Laser Energy"
       symbol: "P"
       column: "PulseEnergy (microJ)"
     - name: "Frequency"
@@ -131,8 +131,8 @@ model:
   embedding_model: "text-embedding-3-small"
   phase1_iterations: 50      # candidate equations generated in Phase 1
   phase3_iterations: 20      # refinement candidates per refinement round
-  refinement_max_rounds: 10  # max Phase 3 refinement rounds
-  r2_threshold: 0.02         # stop refining once (1 - validation_R2) <= this
+  refinement_max_rounds: 3  # max Phase 3 refinement rounds
+  r2_threshold: 0.05         # stop refining once (1 - validation_adjusted_R2) <= this
   max_tokens_initial: 350
   max_tokens_refine: 300
   temperature_min: 0.3       # Phase 1 sampling temperature range
@@ -142,7 +142,16 @@ model:
 reliability_comparison:
   generation_count: 20
   committee_size: 9
-  selection_criterion: "bic"  # alternatives: aic, aicc
+  selection_criterion: "bic"  # alternatives: aic, aicc, adjusted_r2
+  seed: 50
+
+# Active-learning committee generation. adjusted_r2 favors fit quality while
+# accounting for the number of fitted coefficients. Committee selection still
+# removes duplicate validation prediction signatures.
+active_learning:
+  generation_count: 20
+  committee_sizes: [3, 5, 9]
+  selection_criterion: "adjusted_r2"
   seed: 50
 
 # -----------------------------------------------------------------------------

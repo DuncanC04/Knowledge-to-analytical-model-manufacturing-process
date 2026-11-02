@@ -23,7 +23,7 @@ The result is not a finished method. It is a readable sandbox for asking:
      and understand which equation structures are plausible?"
 
 Run:
-    uv run python active_learning_uncertainty.py
+    uv run python exploration/active_learning_uncertainty.py
 """
 
 from __future__ import annotations
@@ -53,9 +53,17 @@ from sklearn.preprocessing import StandardScaler
 from src.config_loader import load_config, resolve_path
 
 
-ROOT = Path(__file__).resolve().parent
-SUMMARY_PATH = ROOT / "output" / "run_summary.txt"
-OUT_DIR = ROOT / "output" / "active_learning_uncertainty"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+SUMMARY_PATH = PROJECT_ROOT / "output" / "run_summary.txt"
+OUT_DIR = PROJECT_ROOT / "output" / "active_learning"
+
+
+def configure_output_paths(cfg: dict) -> None:
+    """Use the configured project output directory, not exploration/output."""
+    global SUMMARY_PATH, OUT_DIR
+    output_dir = resolve_path(cfg, cfg["output"]["dir"])
+    SUMMARY_PATH = output_dir / cfg["output"]["summary_file"]
+    OUT_DIR = output_dir / "active_learning"
 
 
 @dataclass
@@ -495,6 +503,7 @@ def run_experiment(
 ) -> None:
     """Run the RBF-truth active-learning experiment."""
     cfg = load_config()
+    configure_output_paths(cfg)
     input_cols = cfg["input_columns"]
     output_col = cfg["output_column"]
 
@@ -797,6 +806,7 @@ def maybe_write_benchmark_plot(summary: pd.DataFrame) -> None:
 def run_benchmark(args: argparse.Namespace) -> None:
     """Compare acquisition strategies over multiple random seeds."""
     cfg = load_config()
+    configure_output_paths(cfg)
     input_cols = cfg["input_columns"]
     output_col = cfg["output_column"]
     df = pd.read_excel(resolve_path(cfg, cfg["dataset"]["file"]))
@@ -899,7 +909,8 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help=(
             "Optional Python file of generated equation functions, such as "
-            "output/one_shot_literature_equations.py. If omitted, uses run_summary.txt."
+            "output/active_learning/equations/MRR__WaterSpeed_m_s_equations.py. "
+            "If omitted, uses the configured run summary."
         ),
     )
     parser.add_argument("--n-candidates", type=int, default=3000)

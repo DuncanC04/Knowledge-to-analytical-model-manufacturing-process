@@ -11,7 +11,7 @@ from src.research import (
     validate_expression,
     variance_decomposition,
 )
-from src.modeling import information_criteria, select_committee
+from src.modeling import adjusted_r2, information_criteria, select_committee
 
 
 class ResearchTests(unittest.TestCase):
@@ -74,3 +74,13 @@ class ResearchTests(unittest.TestCase):
         ]
         selected = select_committee(candidates, committee_size=2)
         self.assertEqual([item["candidate_id"] for item in selected], ["a", "c"])
+
+    def test_adjusted_r2_selection_prefers_distinct_high_adjusted_r2_models(self):
+        candidates = [
+            {"candidate_id": "simple", "validation_adjusted_r2": 0.90, "validation_mse": 1.0, "expression_complexity": 2, "validation_prediction_signature": "a"},
+            {"candidate_id": "complex", "validation_adjusted_r2": 0.95, "validation_mse": 0.5, "expression_complexity": 8, "validation_prediction_signature": "b"},
+            {"candidate_id": "duplicate", "validation_adjusted_r2": 0.94, "validation_mse": 0.1, "expression_complexity": 9, "validation_prediction_signature": "b"},
+        ]
+        selected = select_committee(candidates, committee_size=2, criterion="adjusted_r2")
+        self.assertEqual([item["candidate_id"] for item in selected], ["complex", "simple"])
+        self.assertAlmostEqual(adjusted_r2(0.8, 20, 2), 0.7764705882352941)
