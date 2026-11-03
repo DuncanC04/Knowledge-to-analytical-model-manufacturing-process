@@ -33,6 +33,7 @@ import inspect
 import importlib.util
 import math
 import re
+import sys
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
@@ -50,10 +51,15 @@ from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler
 
+# Allow `uv run python exploration/active_learning_uncertainty.py` to import
+# the project package exactly as `uv run python -m ...` does.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from src.config_loader import load_config, resolve_path
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SUMMARY_PATH = PROJECT_ROOT / "output" / "run_summary.txt"
 OUT_DIR = PROJECT_ROOT / "output" / "active_learning"
 

@@ -28,7 +28,7 @@ def main() -> None:
     generation_count = args.generation_count or int(active_cfg.get("generation_count", 20))
     committee_sizes = args.committee_sizes or list(active_cfg.get("committee_sizes", [3, 5, 9]))
     criterion = str(active_cfg.get("selection_criterion", "adjusted_r2"))
-    target_output = None if args.all_outputs else (args.target_output or cfg["variables"]["output"]["symbol"])
+    target_output = args.target_output or cfg["variables"]["output"]["symbol"]
     client_kwargs = {"api_key": require_env("OPENAI_API_KEY")}
     base_url = os.environ.get("OPENAI_BASE_URL", "").strip()
     if base_url:
@@ -42,6 +42,7 @@ def main() -> None:
         generation_count=generation_count,
         criterion=criterion,
         target_output=target_output,
+        all_outputs=args.all_outputs,
         use_multistage=True,
         holdout_levels=args.holdout_levels,
     )
