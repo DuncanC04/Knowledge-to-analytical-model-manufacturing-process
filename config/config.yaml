@@ -131,7 +131,7 @@ model:
   embedding_model: "text-embedding-3-small"
   phase1_iterations: 50      # candidate equations generated in Phase 1
   phase3_iterations: 20      # refinement candidates per refinement round
-  refinement_max_rounds: 3  # max Phase 3 refinement rounds
+  refinement_max_rounds: 2  # max Phase 2 refinement rounds
   r2_threshold: 0.05         # stop refining once (1 - validation_adjusted_R2) <= this
   max_tokens_initial: 350
   max_tokens_refine: 300
@@ -141,7 +141,7 @@ model:
 # Equal-budget comparison for literature-conditioned committees.
 reliability_comparison:
   generation_count: 20
-  committee_size: 9
+  committee_size: 5
   selection_criterion: "bic"  # alternatives: aic, aicc, adjusted_r2
   seed: 50
 

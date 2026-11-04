@@ -16,6 +16,7 @@ import random
 import re
 import ast
 import hashlib
+from collections.abc import Mapping
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -126,6 +127,7 @@ def fit_candidate_record(model_code: str, data: dict, literature_context: str = 
         "validation_mse": float(mean_squared_error(y_val, val_prediction)),
         "validation_r2": validation_r2,
         "validation_adjusted_r2": validation_adjusted_r2,
+        "validation_predictions": val_prediction.tolist(),
         "validation_prediction_signature": hashlib.sha256(np.round(val_prediction, 8).tobytes()).hexdigest(),
         "test_domain_valid": bool(np.all(np.isfinite(domain_prediction)) and np.all(np.abs(domain_prediction) < 1e12)),
         "test_domain_max_abs_prediction": float(np.nanmax(np.abs(domain_prediction))) if np.any(np.isfinite(domain_prediction)) else math.inf,
@@ -133,8 +135,74 @@ def fit_candidate_record(model_code: str, data: dict, literature_context: str = 
     }
 
 
-def select_committee(results: list[dict], committee_size: int = 9, criterion: str = "bic") -> list[dict]:
+def _prediction_distance(left: np.ndarray, right: np.ndarray) -> float:
+    """Return a scale-free distance between two validation prediction vectors."""
+    scale = float(np.std(np.concatenate([left, right])))
+    if not np.isfinite(scale) or scale <= np.finfo(float).eps:
+        scale = 1.0
+    return float(np.sqrt(np.mean(((left - right) / scale) ** 2)))
+
+
+def select_diverse_committee(
+    results: list[dict],
+    committee_size: int,
+    *,
+    accuracy_criterion: str = "adjusted_r2",
+    minimum_adjusted_r2: float | None = None,
+    accuracy_tolerance: float = 0.03,
+) -> list[dict]:
+    """Select accurate candidates with intentionally different predictions.
+
+    This mode is opt-in. The legacy committee selector remains unchanged.
+    Validation predictions are used only on the development split.
+    """
+    if accuracy_criterion not in {"aic", "bic", "aicc", "adjusted_r2"}:
+        raise ValueError("accuracy_criterion must be an information criterion or adjusted_r2")
+    valid = [item for item in results if item.get("test_domain_valid", True) and item.get("validation_predictions")]
+    if not valid:
+        return []
+    if accuracy_criterion == "adjusted_r2":
+        best = max(item["validation_adjusted_r2"] for item in valid)
+        floor = best - accuracy_tolerance
+        if minimum_adjusted_r2 is not None:
+            floor = max(floor, float(minimum_adjusted_r2))
+        eligible = [item for item in valid if item["validation_adjusted_r2"] >= floor]
+        eligible.sort(key=lambda item: (-item["validation_adjusted_r2"], item["validation_mse"], item["expression_complexity"]))
+    else:
+        eligible = sorted(valid, key=lambda item: (item[accuracy_criterion], -item.get("validation_adjusted_r2", float("-inf"))))
+    if not eligible:
+        return []
+    selected = [eligible[0]]
+    selected_predictions = [np.asarray(eligible[0]["validation_predictions"], dtype=float)]
+    remaining = eligible[1:]
+    while remaining and len(selected) < committee_size:
+        def score(candidate: dict) -> tuple[float, float]:
+            prediction = np.asarray(candidate["validation_predictions"], dtype=float)
+            distance = min(_prediction_distance(prediction, previous) for previous in selected_predictions)
+            return distance, candidate.get("validation_adjusted_r2", float("-inf"))
+        choice = max(remaining, key=score)
+        selected.append(choice)
+        selected_predictions.append(np.asarray(choice["validation_predictions"], dtype=float))
+        remaining.remove(choice)
+    return selected
+
+
+def select_committee(
+    results: list[dict],
+    committee_size: int = 9,
+    criterion: str = "bic",
+    selection_config: Mapping | None = None,
+) -> list[dict]:
     """Select non-redundant candidates by IC, validation error, and complexity."""
+    if criterion == "diverse_accuracy":
+        options = selection_config or {}
+        return select_diverse_committee(
+            results,
+            committee_size,
+            accuracy_criterion=str(options.get("accuracy_criterion", "adjusted_r2")),
+            minimum_adjusted_r2=options.get("minimum_adjusted_r2"),
+            accuracy_tolerance=float(options.get("accuracy_tolerance", 0.03)),
+        )
     if criterion not in {"aic", "bic", "aicc", "adjusted_r2"}:
         raise ValueError("criterion must be one of: aic, bic, aicc, adjusted_r2")
     valid = [item for item in results if item.get("test_domain_valid", True)]
@@ -187,7 +255,7 @@ def evaluate_committee_on_test(results: list[dict], data: dict) -> dict:
     }
 
 
-def generate_and_select_committee(client, cfg, retrieve, data, *, use_literature: bool, generation_count: int = 20, committee_size: int = 9, criterion: str = "bic", seed: int = 50, log=print):
+def generate_and_select_committee(client, cfg, retrieve, data, *, use_literature: bool, generation_count: int = 20, committee_size: int = 9, criterion: str = "bic", seed: int = 50, selection_config: Mapping | None = None, log=print):
     """Generate comparable literature/no-literature candidate committees."""
     random.seed(seed)
     results, failures = [], []
@@ -195,7 +263,7 @@ def generate_and_select_committee(client, cfg, retrieve, data, *, use_literature
     target_unique = min(committee_size, generation_count)
     max_attempts = max(generation_count, generation_count * 5)
     index = 0
-    while index < max_attempts and (index < generation_count or len(select_committee(results, target_unique, criterion)) < target_unique):
+    while index < max_attempts and (index < generation_count or len(select_committee(results, target_unique, criterion, selection_config)) < target_unique):
         context = retrieve() if use_literature else no_literature_context
         try:
             code = _generate_initial(client, cfg, context)
@@ -211,7 +279,7 @@ def generate_and_select_committee(client, cfg, retrieve, data, *, use_literature
                 ) from exc
             failures.append({"candidate_id": index, "error": type(exc).__name__, "message": str(exc)})
         index += 1
-    selected = select_committee(results, committee_size, criterion)
+    selected = select_committee(results, committee_size, criterion, selection_config)
     if len(selected) < target_unique:
         log(f"Warning: generated {len(results)} candidates but found only {len(selected)} distinct finite candidates; requested {target_unique}.")
     log(f"{'literature' if use_literature else 'no-literature'}: {len(results)} fitted, {len(selected)} finite non-redundant candidates selected")

@@ -1,0 +1,77 @@
+# Opt-in diverse-committee profile.
+# The legacy config/config.yaml remains unchanged and remains the default.
+topic: "FLIPMM (Flow-assisted Laser-Induced Plasma Micro-Machining)"
+
+variables:
+  inputs:
+    - {name: "Water Speed", symbol: "WS", column: "WaterSpeed (m/s)"}
+    - {name: "Laser Energy", symbol: "P", column: "PulseEnergy (microJ)"}
+    - {name: "Frequency", symbol: "F", column: "Frequency (kHz)"}
+    - {name: "Scanning Speed", symbol: "SS", column: "ScanningSpeed (mm/s)"}
+  output: {name: "Material Removal Rate", symbol: "MRR", column: "MRR (cubic micrometer per sec)"}
+  outputs:
+    - {name: "Channel Width", symbol: "W", column: "Width (micrometer)"}
+    - {name: "Channel Depth", symbol: "D", column: "Depth (micrometer)"}
+    - {name: "Material Removal Rate", symbol: "MRR", column: "MRR (cubic micrometer per sec)"}
+    - {name: "Heat-Affected Zone", symbol: "HAZ", column: "HAZ (micrometer)"}
+
+dataset:
+  file: "data/FLIPMM.xlsx"
+  filter_columns:
+    - "WaterSpeed (m/s)"
+    - "PulseEnergy (microJ)"
+    - "Frequency (kHz)"
+    - "ScanningSpeed (mm/s)"
+  ratio: 0.75
+  train_size: 30
+  random_state: 50
+
+evaluation:
+  tolerances: null
+  statistical_threshold_fractions: [0.1, 0.25, 0.5, 1.0]
+  primary_acceptance_fraction: 0.5
+  interval_nominal_levels: [0.8, 0.9, 0.95]
+
+knowledge:
+  pdf_files: []
+  parsed_cache: "data/cache/parsed_data.pkl"
+  parsing_instruction: >
+    The provided documents describe a manufacturing process. Retrieve evidence
+    about the requested variables and their relations, including equations.
+  similarity_top_k: 15
+  reranker_model: "BAAI/bge-reranker-large"
+  reranker_top_n: 15
+  retrieval_query: >
+    Only use the provided PDFs. Retrieve direct relationships between {inputs}
+    and {output}, including direction, nonlinear form, evidence, and process context.
+
+model:
+  llm_model: "gpt-4o-mini"
+  embedding_model: "text-embedding-3-small"
+  phase1_iterations: 50
+  phase3_iterations: 20
+  refinement_max_rounds: 2
+  r2_threshold: 0.05
+  max_tokens_initial: 350
+  max_tokens_refine: 300
+  temperature_min: 0.3
+  temperature_max: 0.8
+
+active_learning:
+  generation_count: 100
+  committee_sizes: [5]
+  selection_criterion: "diverse_accuracy"
+  accuracy_criterion: "adjusted_r2"
+  minimum_adjusted_r2: 0.90
+  accuracy_tolerance: 0.03
+  seed: 50
+
+experiment:
+  # Keep the first comparison focused on the four primary methods.
+  strategies: ["random", "maximin", "gp_uncertainty", "disagreement"]
+
+output:
+  dir: "output/diverse_committee"
+  initial_equation_file: "initial_equation.txt"
+  final_equation_file: "final_equation.txt"
+  summary_file: "run_summary.txt"

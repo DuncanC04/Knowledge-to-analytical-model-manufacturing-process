@@ -234,7 +234,8 @@ def run_active_learning_grid(
                 _, archive = modeling.generate_and_select_committee(
                     client, task_cfg, task_retrieve, data, use_literature=True,
                     generation_count=generation_count, committee_size=max(sizes),
-                    criterion=criterion, seed=seed, log=log,
+                    criterion=criterion, seed=seed,
+                    selection_config=task_cfg.get("active_learning", {}), log=log,
                 )
             candidates = archive["all_candidates"]
             task_result = {
@@ -246,7 +247,7 @@ def run_active_learning_grid(
                 "committee_sizes": {},
             }
             for size in sizes:
-                committee = modeling.select_committee(candidates, size, criterion)
+                committee = modeling.select_committee(candidates, size, criterion, task_cfg.get("active_learning", {}))
                 if not committee:
                     continue
                 evaluation = modeling.evaluate_committee_on_test(committee, data)
